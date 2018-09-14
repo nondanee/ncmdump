@@ -15,9 +15,18 @@ pip(3) install pycrypto
 ```
 
 ## 嘤嘤嘤
+####   以上为原作者内容，fork 自 [lianglixin/ncmdump](https://github.com/lianglixin/ncmdump)
+<hr />
 
-
-
-#### - zhangbohan.dell@gmail.com
 ### 补充 
+#### - zhangbohan.dell@gmail.com
+
 &emsp;&emsp;添加了一个pyqt的图形化界面，目前仅仅是可以使用，仍在不断优化  
+#### 目前功能
+1. 一个简陋的图形化窗口
+2. 支持文件夹添加，会识别文件夹中的ncm文件，并将其转为一个同名的MP3和一个同名的jpg
+
+#### 计划未来版本
+1. 优化图形化界面，添加更多功能
+2. 添加多线程支持，提高转化效率
+3. 将jpg专辑图片保存mp3内部
