@@ -15,3 +15,9 @@ pip(3) install pycrypto
 ```
 
 ## 嘤嘤嘤
+
+
+
+#### - zhangbohan.dell@gmail.com
+### 补充 
+&emsp;&emsp;添加了一个pyqt的图形化界面，目前仅仅是可以使用，仍在不断优化  

@@ -6,6 +6,10 @@ import base64
 import json
 import os
 from Crypto.Cipher import AES
+
+class ncm_dump:
+    def __init__(self,file_path):
+        self.file_path = file_path
 def dump(file_path):
     core_key = binascii.a2b_hex("687A4852416D736F356B496E62617857")
     meta_key = binascii.a2b_hex("2331346C6A6B5F215C5D2630553C2728")
@@ -18,7 +22,7 @@ def dump(file_path):
     key_length = struct.unpack('<I', bytes(key_length))[0]
     key_data = f.read(key_length)
     key_data_array = bytearray(key_data)
-    for i in range (0,len(key_data_array)): key_data_array[i] ^= 0x64
+    for i in range(0,len(key_data_array)): key_data_array[i] ^= 0x64
     key_data = bytes(key_data_array)
     cryptor = AES.new(core_key, AES.MODE_ECB)
     key_data = unpad(cryptor.decrypt(key_data))[17:]
@@ -52,7 +56,11 @@ def dump(file_path):
     image_size = f.read(4)
     image_size = struct.unpack('<I', bytes(image_size))[0]
     image_data = f.read(image_size)
-    file_name = meta_data['musicName'] + '.' + meta_data['format']
+    image_name = meta_data['artist'][0][0]+' - '+meta_data['musicName'] + '.jpg'
+    new_file = open(os.path.join(os.path.split(file_path)[0], image_name), 'wb')
+    new_file.write(image_data)
+    new_file.close()
+    file_name = meta_data['artist'][0][0]+' - '+meta_data['musicName'] + '.' + meta_data['format']
     m = open(os.path.join(os.path.split(file_path)[0],file_name),'wb')
     chunk = bytearray()
     while True:
@@ -60,12 +68,15 @@ def dump(file_path):
         chunk_length = len(chunk)
         if not chunk:
             break
-        for i in range(1,chunk_length+1):
-            j = i & 0xff;
-            chunk[i-1] ^= key_box[(key_box[j] + key_box[(key_box[j] + j) & 0xff]) & 0xff]
+        for i in range(1,chunk_length + 1):
+            j = i & 0xff
+            chunk[i - 1] ^= key_box[(key_box[j] + key_box[(key_box[j] + j) & 0xff]) & 0xff]
         m.write(chunk)
     m.close()
     f.close()
+
+    return file_name,image_name
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1:
