@@ -5,7 +5,8 @@
 # Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
-
+import sys
+from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_music_change(object):
@@ -77,3 +78,11 @@ class Ui_music_change(object):
         self.label_2.setText(_translate("music_change", "请选择生成的MP3和jpg所在目录"))
         self.pushButton_3.setText(_translate("music_change", "选择文件夹"))
 
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = QDialog()
+
+    ui = Ui_music_change()
+    ui.setupUi(window)
+    window.show()
+    sys.exit(app.exec_())

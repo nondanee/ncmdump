@@ -5,11 +5,10 @@
 # Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
-import sys, re, time
+import sys, re, os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from ncmdump import *
-import threading
 from queue import Queue
 
 
@@ -18,6 +17,7 @@ class Ui_music_change(object):
         self.filelist = list()
         self.flag = True
         self.music_change = music_change
+        self.queue = Queue()
         self.queue = Queue()
         music_change.setObjectName("music_change")
         music_change.resize(379, 345)
@@ -69,13 +69,11 @@ class Ui_music_change(object):
         self.verticalLayout_4.addLayout(self.verticalLayout_3)
         self.buttonBox = QtWidgets.QDialogButtonBox(self.layoutWidget)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout_4.addWidget(self.buttonBox)
 
         self.retranslateUi(music_change)
-
         self.buttonBox.accepted.connect(self.ok)
         self.buttonBox.rejected.connect(self.clearAll)
         QtCore.QMetaObject.connectSlotsByName(music_change)
@@ -87,22 +85,15 @@ class Ui_music_change(object):
 
                 self.flag = False
                 self.start_trasnsfer()
-                reply = QMessageBox.question(self.music_change, 'Message',
-                                             "确定退出?",
-                                             QMessageBox.Yes | QMessageBox.No,
-                                             QMessageBox.Yes)
+                reply = QMessageBox.question(self.music_change, 'Message', "确定退出?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
                 if reply == QMessageBox.Yes:
                     sys.exit()
                 else:
                     self.clearAll()
-
-
             else:
-                self.qmessagebox = QMessageBox.information(self.music_change, "提示",
-                                                           "正在转化文件，请稍等")
+                self.qmessagebox = QMessageBox.information(self.music_change, "提示", "正在转化文件，请稍等")
         else:
-            self.qmessagebox = QMessageBox.information(self.music_change, "提示",
-                                                       "没有文件")
+            self.qmessagebox = QMessageBox.information(self.music_change, "提示", "没有文件")
 
     def start_trasnsfer(self):
         Thread_list = []
@@ -150,10 +141,11 @@ class Ui_music_change(object):
 
     def retranslateUi(self, music_change):
         _translate = QtCore.QCoreApplication.translate
-        music_change.setWindowTitle(_translate("music_change", "Dialog"))
+        music_change.setWindowTitle(_translate("music_change", "ncm文件转化工具"))
         self.label.setText(_translate("music_change", "请选择ncm文件所在的文件夹"))
         self.pushButton_2.setText(_translate("music_change", "选择文件夹"))
         self.pushButton_2.clicked.connect(self.openFile)
         self.label_2.setText(_translate("music_change", "请选择生成的MP3和jpg所在目录"))
         self.pushButton_3.setText(_translate("music_change", "选择文件夹"))
         self.pushButton_3.clicked.connect(self.saveFile)
+

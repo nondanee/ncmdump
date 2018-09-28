@@ -4,7 +4,6 @@ import binascii
 import struct
 import base64
 import json
-import os
 from threading import Thread
 from Crypto.Cipher import AES
 
@@ -72,7 +71,7 @@ class ncm_dump(Thread):
         new_file = open(save_path + "\\" + image_name, 'wb')
         new_file.write(image_data)
         new_file.close()
-        self.queue.put("生成jpg文件 -- " + image_name)
+        # self.queue.put("生成jpg文件 -- " + image_name)
         file_name = meta_data['artist'][0][0] + ' - ' + meta_data['musicName'] + '.' + meta_data[
             'format']
         m = open(save_path + "\\" + file_name, 'wb')
@@ -88,4 +87,4 @@ class ncm_dump(Thread):
             m.write(chunk)
         m.close()
         f.close()
-        self.queue.put("生成MP3文件 -- " + file_name)
+        # self.queue.put("生成MP3文件 -- " + file_name)
