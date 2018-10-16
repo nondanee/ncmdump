@@ -5,7 +5,6 @@ Created on Sun Jul 15 01:05:58 2018
 @author: Nzix
 """
 
-import binascii
 import struct
 import base64
 import json
@@ -16,23 +15,22 @@ from mutagen import mp3, flac, id3
 def dump(input_path, output_path = None):
 
     output_path = (lambda path, meta : os.path.splitext(path)[0] + '.' + meta['format']) if not output_path else output_path
-    core_key = binascii.a2b_hex('687A4852416D736F356B496E62617857')
-    meta_key = binascii.a2b_hex('2331346C6A6B5F215C5D2630553C2728')
-    unpad = lambda s : s[0:-(s[-1] if type(s[-1]) == int else ord(s[-1]))]
+    core_key = b'hzHRAmso5kInbaxW'
+    meta_key = rb"#14ljk_!\]&0U<'("
+    unpad = lambda s : s[0:-s[-1]]
 
     f = open(input_path,'rb')
 
     # magic header
-    header = f.read(8)
-    assert binascii.b2a_hex(header) == b'4354454e4644414d'
+    header = f.read(10)
+    assert header[:8] == b'CTENFDAM'
 
     # key data
-    f.seek(2, 1)
     key_length = f.read(4)
     key_length = struct.unpack('<I', bytes(key_length))[0]
 
     key_data = bytearray(f.read(key_length))
-    key_data = bytes(bytearray([byte ^ 0x64 for byte in key_data]))
+    key_data = bytes(byte ^ 0x64 for byte in key_data)
 
     cryptor = AES.new(core_key, AES.MODE_ECB)
     key_data = unpad(cryptor.decrypt(key_data))[17:]
@@ -52,7 +50,7 @@ def dump(input_path, output_path = None):
     meta_length = struct.unpack('<I', bytes(meta_length))[0]
 
     meta_data = bytearray(f.read(meta_length))
-    meta_data = bytes(bytearray([byte ^ 0x63 for byte in meta_data]))
+    meta_data = bytes(byte ^ 0x63 for byte in meta_data)
     meta_data = base64.b64decode(meta_data[22:])
 
     cryptor = AES.new(meta_key, AES.MODE_ECB)
@@ -60,11 +58,10 @@ def dump(input_path, output_path = None):
     meta_data = json.loads(meta_data)
 
     # crc32
-    crc32 = f.read(4)
-    crc32 = struct.unpack('<I', bytes(crc32))[0]
+    crc32 = f.read(9)
+    crc32 = struct.unpack('<I5x', bytes(crc32))[0]
 
     # album cover
-    f.seek(5, 1)
     image_size = f.read(4)
     image_size = struct.unpack('<I', bytes(image_size))[0]
     image_data = f.read(image_size)
