@@ -2,10 +2,12 @@
 
 ## 简介
 大幅提高了性能
-## 依赖
+## 依赖库
 
 ```
-$ pip install pycryptodome mutagen numpy
+* pycryptodome  
+* mutagen  
+* numpy
 ```
 
 ## 使用
