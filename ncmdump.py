@@ -106,8 +106,8 @@ def Dump():
                 audio = MP3(output_path)
                 audio.tags.add(
                     APIC(
-                        mime='image/png',  # image/jpeg or image/png
-                        type=3,  # 3 is for the cover image
+                        mime=mime,
+                        type=3,
                         data=image_data
                     )
                 )
