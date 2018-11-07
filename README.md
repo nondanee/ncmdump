@@ -12,9 +12,9 @@ $ pip install pycryptodome mutagen numpy
 
 - 指定文件
 ```
-dump(文件路径, 输出文件夹路径)
+dump(文件路径, 输出目录)
 ```
 - 遍历工作目录
 ```
-search_and_dump(文件夹路径, 输出文件夹路径)
+search_and_dump(输入目录, 输出目录)
 ```
