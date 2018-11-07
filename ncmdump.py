@@ -1,136 +1,140 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 15 01:05:58 2018
+#! /user/bin/env python3
+# -*-coding: utf-8 -*-
+from base64 import b64decode
+from functools import partial
+from json import loads
+from os import scandir
+from os.path import basename, join, isfile
+from struct import unpack
+from time import clock
 
-@author: Nzix
-"""
-
-import binascii
-import struct
-import base64
-import json
-import os
 from Crypto.Cipher import AES
-from mutagen import mp3, flac, id3
+from mutagen.flac import Picture, FLAC
+from mutagen.id3 import APIC
+from mutagen.mp3 import MP3
+from numpy import fromstring
 
-def dump(input_path, output_path = None):
 
-    output_path = (lambda path, meta : os.path.splitext(path)[0] + '.' + meta['format']) if not output_path else output_path
-    core_key = binascii.a2b_hex('687A4852416D736F356B496E62617857')
-    meta_key = binascii.a2b_hex('2331346C6A6B5F215C5D2630553C2728')
-    unpad = lambda s : s[0:-(s[-1] if type(s[-1]) == int else ord(s[-1]))]
+def bxor_numpy(b1, b2):
+    n_b1 = fromstring(b1, dtype='uint8')
+    n_b2 = fromstring(b2, dtype='uint8')
+    return (n_b1 ^ n_b2).tostring()
 
-    f = open(input_path,'rb')
 
-    # magic header
-    header = f.read(8)
-    assert binascii.b2a_hex(header) == b'4354454e4644414d'
+def Dump():
+    ncm_header = b'CTENFDAM'
+    core_key = b'hzHRAmso5kInbaxW'
+    meta_key = b"#14ljk_!\\]&0U<'("
+    core_cryptor = AES.new(core_key, AES.MODE_ECB)
+    meta_cryptor = AES.new(meta_key, AES.MODE_ECB)
+    up = partial(unpack, '<I')
+    range_256 = list(range(256))
+    indexes = range_256[1:] + [0]
 
-    # key data
-    f.seek(2, 1)
-    key_length = f.read(4)
-    key_length = struct.unpack('<I', bytes(key_length))[0]
+    def aes128_ecb_decrypt(ciphertext):
+        plaintext = core_cryptor.decrypt(ciphertext)
+        return plaintext[:- plaintext[-1]]
 
-    key_data = bytearray(f.read(key_length))
-    key_data = bytes(bytearray([byte ^ 0x64 for byte in key_data]))
+    def b64_aes128_ecb_decrypt(ciphertext):
+        plaintext = meta_cryptor.decrypt(b64decode(ciphertext))
+        return plaintext[:- plaintext[-1]]
 
-    cryptor = AES.new(core_key, AES.MODE_ECB)
-    key_data = unpad(cryptor.decrypt(key_data))[17:]
-    key_length = len(key_data)
+    def _dump(file_path, output_path):
+        with open(file_path, 'rb') as f:
 
-    # S-box (standard RC4 Key-scheduling algorithm)
-    key = bytearray(key_data)
-    S = bytearray(range(256))
-    j = 0
+            # magic header
+            header = f.read(8)
+            assert header == ncm_header
 
-    for i in range(256):
-        j = (j + S[i] + key[i % key_length]) % 256
-        S[i], S[j] = S[j], S[i]
+            # key data
+            f.seek(2, 1)
+            key_length = f.read(4)
+            key_length = up(key_length)[0]
 
-    # meta data
-    meta_length = f.read(4)
-    meta_length = struct.unpack('<I', bytes(meta_length))[0]
+            key_data = f.read(key_length)
+            key_data = bytes(byte ^ 0x64 for byte in key_data)
+            key_data = aes128_ecb_decrypt(key_data)[17:]
+            key_length = len(key_data)
 
-    meta_data = bytearray(f.read(meta_length))
-    meta_data = bytes(bytearray([byte ^ 0x63 for byte in meta_data]))
-    meta_data = base64.b64decode(meta_data[22:])
+            # key box
+            key_box = bytearray(range_256)
+            j = 0
+            for i in range_256:
+                j = (key_box[i] + j + key_data[i % key_length]) & 0xff
+                key_box[i], key_box[j] = key_box[j], key_box[i]
+            modify_keys = bytes(key_box[(key_box[i] + key_box[(key_box[i] + i) & 0xff]) & 0xff] for i in indexes)
 
-    cryptor = AES.new(meta_key, AES.MODE_ECB)
-    meta_data = unpad(cryptor.decrypt(meta_data)).decode('utf-8')[6:]
-    meta_data = json.loads(meta_data)
+            # meta data
+            meta_length = f.read(4)
+            meta_length = up(meta_length)[0]
+            meta_data = f.read(meta_length)
+            meta_data = bytes(byte ^ 0x63 for byte in meta_data)[22:]
+            meta_data = b64_aes128_ecb_decrypt(meta_data).decode()[6:]
+            meta_data = loads(meta_data)
+            f.seek(9, 1)
 
-    # crc32
-    crc32 = f.read(4)
-    crc32 = struct.unpack('<I', bytes(crc32))[0]
+            # album cover
+            image_size = f.read(4)
+            image_size = up(image_size)[0]
+            image_data = f.read(image_size)
 
-    # album cover
-    f.seek(5, 1)
-    image_size = f.read(4)
-    image_size = struct.unpack('<I', bytes(image_size))[0]
-    image_data = f.read(image_size)
+            # media data
+            music_name = f'{basename(file_path).rsplit(".",maxsplit=1)[0]}.{meta_data["format"]}'
+            output_path = join(output_path, music_name)
+            print(music_name, end=' ··· ')
+            if isfile(output_path):
+                print('文件已存在')
+                return
+            music_data = f.read()
+        l = len(music_data)
+        full_chunk_count = l // 256
+        last_chunk_length = l % 256
+        modify_keys = modify_keys * full_chunk_count + modify_keys[:last_chunk_length]
 
-    # media data
-    output_path = output_path(input_path, meta_data)
-    m = open(output_path,'wb')
-    data = bytearray(f.read())
+        modified_music_data = bxor_numpy(modify_keys, music_data)
 
-    # stream cipher (modified RC4 Pseudo-random generation algorithm)
-    i = 0
-    j = 0
-    for k, _ in enumerate(data):
-        i = (i + 1) % 256
-        j = (i + S[i]) % 256 # in RC4, is j = (j + S[i]) % 256
-        # S[i], S[j] = S[j], S[i] # no swapping
-        data[k] ^= S[(S[i] + S[j]) % 256]
+        with open(output_path, 'wb') as m:
+            m.write(modified_music_data)
+        if image_data == b'':
+            print('没有封面')
+        else:
+            if image_data.startswith(b'\xFF\xD8\xFF\xE0'):
+                mime = 'image/jpeg'
+            elif image_data.startswith(b'\x89PNG\r\n\x1a\n'):
+                mime = 'image/png'
+            if meta_data['format'] == 'mp3':
+                audio = MP3(output_path)
+                audio.tags.add(
+                    APIC(
+                        mime='image/png',  # image/jpeg or image/png
+                        type=3,  # 3 is for the cover image
+                        data=image_data
+                    )
+                )
 
-    m.write(data)
-    m.close()
-    f.close()
+            elif meta_data['format'] == 'flac':
+                audio = FLAC(output_path)
+                audio.clear_pictures()
+                cover = Picture(image_data)
+                cover.mime = mime
+                cover.desc = u'cover'
+                audio.add_picture(cover)
+            audio.save(v2_version=3)
+        print('完成')
 
-    # media tag
-    if meta_data['format'] == 'flac':
-        audio = flac.FLAC(output_path)
-        # audio.delete()
-        image = flac.Picture()
-        image.type = 3
-        image.mime = 'image/jpeg'
-        image.data = image_data
-        audio.clear_pictures()
-        audio.add_picture(image)
-    elif meta_data['format'] == 'mp3':
-        audio = mp3.MP3(output_path)
-        # audio.delete()
-        image = id3.APIC()
-        image.type = 3
-        image.mime = 'image/jpeg'
-        image.data = image_data
-        audio.tags.add(image)
-        audio.save()
-        audio = mp3.EasyMP3(output_path)
+    return _dump
 
-    audio['title'] = meta_data['musicName']
-    audio['album'] = meta_data['album']
-    audio['artist'] = '/'.join([artist[0] for artist in meta_data['artist']])
-    audio.save()
-    
-    return output_path
 
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) > 1:
-        files = sys.argv[1:]
-    else:
-        files = [file_name for file_name in os.listdir('.') if os.path.splitext(file_name)[-1] == '.ncm']
-    if sys.version[0] == '2':
-        files = [file_name.decode(sys.stdin.encoding) for file_name in files]
+dump = Dump()
 
-    if not files:
-        print('please input file path!')
-        
-    for file_name in files:
-        try:
-            dump(file_name)
-            print(os.path.split(file_name)[-1])
-        except Exception as e:
-            print(e)
-            pass
+
+def search_and_dump(search_dir, output_dir):
+    ncm_files_path = [i.path for i in scandir(search_dir) if i.name.endswith('.ncm')]
+    l = len(ncm_files_path)
+    i = 1
+    st = clock()
+    for file_path in ncm_files_path:
+        print(f'{i}/{l}', end=' ')
+        i += 1
+        dump(file_path, output_dir)
+    print(f'时间: {clock() - st:.2f}s')
