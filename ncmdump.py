@@ -124,8 +124,8 @@ def Dump():
 dump = Dump()
 
 
-def walk(_path):
-    for entry in scandir(_path):
+def walk(path):
+    for entry in scandir(path):
         if entry.is_file():
             yield entry
         else:
