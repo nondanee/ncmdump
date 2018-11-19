@@ -87,12 +87,8 @@ def Dump():
                 return
             music_data = f.read()
         l = len(music_data)
-        full_chunk_count = l // 256
-        last_chunk_length = l % 256
-        modify_keys = modify_keys * full_chunk_count + modify_keys[:last_chunk_length]
-
+        modify_keys = modify_keys * (l // 256) + modify_keys[:l % 256]
         modified_music_data = bxor_numpy(modify_keys, music_data)
-
         with open(output_path, 'wb') as m:
             m.write(modified_music_data)
         if image_data == b'':
@@ -128,12 +124,20 @@ def Dump():
 dump = Dump()
 
 
-def search_and_dump(search_dir, output_dir):
-    ncm_files_path = [i.path for i in scandir(search_dir) if i.name.endswith('.ncm')]
-    l = len(ncm_files_path)
+def walk(_path):
+    for entry in scandir(_path):
+        if entry.is_file():
+            yield entry
+        else:
+            yield from walk(entry.path)
+            
+   
+def search_and_dump(dir, output_dir):           
+    ncm_files = [entry.path for entry in walk(dir) if entry.name.endswith('.ncm')]
+    l = len(ncm_files)
     i = 1
     st = clock()
-    for file_path in ncm_files_path:
+    for file_path in ncm_files:
         print(f'{i}/{l}', end=' ')
         i += 1
         dump(file_path, output_dir)
