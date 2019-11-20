@@ -5,19 +5,25 @@ Created on Sun Jul 15 01:05:58 2018
 @author: Nzix
 """
 
-import binascii, struct
-import base64, json
-import os, traceback
+import binascii
+import struct
+import base64
+import json
+import os
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from Crypto.Util.strxor import strxor as XOR
 from mutagen import mp3, flac, id3
 
-def dump(input_path, output_path = None, skip = True):
 
-    output_path = (lambda path, meta: os.path.splitext(path)[0] + '.' + meta['format']) if not output_path else output_path
-    output_path = (lambda path, meta: path) if not callable(output_path) else output_path
+def dump(input_path, output_path=None, skip=True):
+
+    output_path = (lambda path, meta: os.path.splitext(path)[
+                   0] + '.' + meta['format']) \
+        if not output_path else output_path
+    output_path = (lambda path, meta: path) if not callable(
+        output_path) else output_path
 
     core_key = binascii.a2b_hex('687A4852416D736F356B496E62617857')
     meta_key = binascii.a2b_hex('2331346C6A6B5F215C5D2630553C2728')
@@ -64,7 +70,8 @@ def dump(input_path, output_path = None, skip = True):
         meta_data = unpad(cryptor.decrypt(meta_data), 16).decode('utf-8')
         meta_data = json.loads(meta_data[6:])
     else:
-        meta_data = {'format': 'flac' if os.fstat(f.fileno()).st_size > 1024 ** 2 * 16 else 'mp3'}
+        meta_data = {'format': 'flac' if os.fstat(
+            f.fileno()).st_size > 1024 ** 2 * 16 else 'mp3'}
 
     f.seek(5, 1)
 
@@ -79,7 +86,8 @@ def dump(input_path, output_path = None, skip = True):
 
     # media data
     output_path = output_path(input_path, meta_data)
-    if skip and os.path.exists(output_path): return
+    if skip and os.path.exists(output_path):
+        return
 
     data = f.read()
     f.close()
@@ -97,7 +105,8 @@ def dump(input_path, output_path = None, skip = True):
     def embed(item, content, type):
         item.encoding = 0
         item.type = type
-        item.mime = 'image/png' if content[0:4] == binascii.a2b_hex('89504E47') else 'image/jpeg'
+        item.mime = 'image/png' if content[0:4] == binascii.a2b_hex(
+            '89504E47') else 'image/jpeg'
         item.data = content
 
     if image_data:
@@ -125,28 +134,8 @@ def dump(input_path, output_path = None, skip = True):
             audio['comment'] = identification
         audio['title'] = meta_data['musicName']
         audio['album'] = meta_data['album']
-        audio['artist'] = '/'.join([artist[0] for artist in meta_data['artist']])
+        audio['artist'] = '/'.join([artist[0]
+                                    for artist in meta_data['artist']])
         audio.save()
 
     return output_path
-
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) > 1:
-        files = sys.argv[1:]
-    else:
-        files = [name for name in os.listdir('.') if os.path.splitext(name)[-1] == '.ncm']
-    
-    if sys.version[0] == '2':
-        files = [path.decode(sys.stdin.encoding) for path in files]
-
-    if not files:
-        print('please input file path!')
-        
-    for path in files:
-        try:
-            dump(path)
-            print(os.path.split(path)[-1])
-        except Exception as e:
-            print(traceback.format_exc())
-            pass

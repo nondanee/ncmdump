@@ -15,25 +15,65 @@
 
 ## Dependency
 
+If to install this package and run, dependencies will be automatically installed:
+
+```bash
+pip install pycryptodome mutagen argparse
 ```
-$ pip install pycryptodome mutagen
+
+## Install
+
+You can install the package and run it globally:
+
+```bash
+pip install git+https://github.com/nondanee/ncmdump.git
 ```
 
 ## Usage
 
 ### Specify files
 
+If installed:
+
+```bash
+ncmdump file_or_folder1[, file_or_folder2[,...]]
 ```
-$ python ncmdump.py [file ...]
+
+If not installed:
+
+```bash
+python ncmdump/ncmcli.py file_or_folder1[, file_or_folder2[,...]]
 ```
+
 ### Traverse working directory
 
+If installed:
+
+```bash
+ncmdump
 ```
-$ python ncmdump.py
+
+If not installed:
+
+```bash
+python ncmdump/ncmcli.py
 ```
+
 ### More options
+
+If installed:
+
+```bash
+ncmdump -h
 ```
-$ python app.py -h
+
+If not installed:
+
+```bash
+python ncmdump/ncmcli.py -h
+```
+
+<var>
 usage: ncmdump [-h] [-f format] [-o output] [-d] [-c | -s] [input [input ...]]
 
 positional arguments:
@@ -46,7 +86,6 @@ optional arguments:
   -d          delete source after conversion
   -c          overwrite file with the same name
   -s          skip conversion if file exist
-```
+</var>
 
-> Supported name holder: %artist%, %title%, %album%
-
+**Supported name holder: %artist%, %title%, %album%**
