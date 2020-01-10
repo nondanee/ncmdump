@@ -41,3 +41,9 @@ pip(3) install pycrypto
 ```bash
 pyuic5 -o file.py file.ui
 ```
+
+#### 打包
+windows下运行得到exe，mac下运行得到app，linxu下未测试。。
+```bash
+python pyinstaller.py
+```
