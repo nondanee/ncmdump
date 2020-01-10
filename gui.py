@@ -78,11 +78,14 @@ class Ui_music_change(object):
         self.buttonBox.rejected.connect(self.clearAll)
         QtCore.QMetaObject.connectSlotsByName(music_change)
 
+    def sendMessage(self,value):
+        self.listView.append(value)
+        QApplication.processEvents()
+
     def ok(self):
         if self.filelist is not None and len(self.filelist) > 0:
             if self.flag:
-                self.listView.append("正在转化文件，请稍等")
-
+                self.sendMessage("正在转化文件，请稍等")
                 self.flag = False
                 self.start_trasnsfer()
                 reply = QMessageBox.question(self.music_change, 'Message', "确定退出?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
@@ -102,15 +105,14 @@ class Ui_music_change(object):
             thread.start()
             # mp3file, imgfile
             Thread_list.append(thread)
-            # self.listView.append("已生成 --- " + mp3file)
-            # self.listView.append("已生成 --- " + imgfile)
+            # self.sendMessage("已生成 --- " + mp3file)
+            # self.sendMessage("已生成 --- " + imgfile)
         while not self.queue.empty():
-            self.listView.append(self.queue.get())
+            self.sendMessage(self.queue.get())
             # self.queue.task_done()  # 告诉队列任务完成以解除阻塞
         for i in Thread_list:
             i.join()
-
-        self.listView.append("转化完成")
+        self.sendMessage("转化完成")
 
     def openFile(self):
         self.filename = QFileDialog.getExistingDirectory(self.music_change)
@@ -120,11 +122,12 @@ class Ui_music_change(object):
             # with f:
             #     data = f.read()
             self.lineEdit.setText(self.filename)
+            self.lineEdit_2.setText(self.filename)
         for (root, dirs, files) in os.walk(self.filename):
             for file in files:
                 if re.match(".*\.ncm$", str(file)) is not None:
                     self.filelist.append(file)
-                    self.listView.append("已添加文件 --- " + file)
+                    self.sendMessage("已添加文件 --- " + file)
 
     def saveFile(self):
         self.savefile = QFileDialog.getExistingDirectory(self.music_change)
@@ -148,4 +151,3 @@ class Ui_music_change(object):
         self.label_2.setText(_translate("music_change", "请选择生成的MP3和jpg所在目录"))
         self.pushButton_3.setText(_translate("music_change", "选择文件夹"))
         self.pushButton_3.clicked.connect(self.saveFile)
-
