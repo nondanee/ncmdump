@@ -13,40 +13,63 @@
 - [JamieDummy/NCM_dump](https://github.com/JamieDummy/NCM_dump): Add GUI
 - [mnilzg/ncmdump](https://github.com/mnilzg/ncmdump): Speed up with NumPy
 
+
+### Contributor
+
+- [@kalteblau](https://github.com/kalteblau): Validate path & collision
+- [@HarrisonXi](https://github.com/HarrisonXi): Add missing identifier
+- [@leconio](https://github.com/leconio): Handle dict key missing exception
+- [@lonelyhentai](https://github.com/lonelyhentai): Add pip support
+
 ## Dependency
 
 ```
 $ pip install pycryptodome mutagen
 ```
 
+## Install
+
+```
+$ pip install git+https://github.com/nondanee/ncmdump.git
+```
+
 ## Usage
 
-### Specify files
+### Execute
 
-```
-$ python ncmdump.py [file ...]
-```
-### Traverse working directory
-
-```
-$ python ncmdump.py
-```
-### More options
-```
-$ python app.py -h
-usage: ncmdump [-h] [-f format] [-o output] [-d] [-c | -s] [input [input ...]]
+```sh
+$ ncmdump -h # equivalent to "python ncmdump/app.py -h" and "python -m ncmdump.app"
+usage: ncmdump [-h] [-f format] [-o output] [-d] [-c | -r] [input [input ...]]
 
 positional arguments:
-  input       ncm file or folder path
+  input      ncm file or folder path
 
 optional arguments:
-  -h, --help  show this help message and exit
-  -f format   customize naming format
-  -o output   customize saving folder
-  -d          delete source after conversion
-  -c          overwrite file with the same name
-  -s          skip conversion if file exist
+  -h         show this help message and exit
+  -f format  customize naming format
+  -o output  customize saving folder
+  -d         delete source after conversion
+  -c         overwrite file with the same name
+  -r         auto rename if file name conflicts
 ```
 
-> Supported name holder: %artist%, %title%, %album%
+> Supported name format holder: `%artist%`, `%title%`, `%album%`
 
+### Import
+
+```python
+from ncmdump import dump
+```
+
+```python
+def dump(input_path, output_path = None, skip = True):
+    '''
+    args:
+        input_path: a string of input file path
+        output_path: a string of output file path or a naming function
+        skip: a boolean controls conversion skipping when output file exists
+
+    returns:
+        a string of output file path or none if conversion is skipped
+    '''
+```

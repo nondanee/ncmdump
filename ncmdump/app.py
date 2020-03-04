@@ -5,11 +5,20 @@ Created on Fri Sep 28 13:32:51 2018
 @author: Nzix
 """
 
-import argparse, os, sys, re
-import ncmdump
+import argparse, os, sys, traceback, re
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+if __package__ is None:
+    from core import dump
+else:
+    from .core import dump
 
 parser = argparse.ArgumentParser(
-    prog = 'ncmdump'
+    prog = 'ncmdump', add_help = False
+)
+parser.add_argument(
+    '-h', action = 'help',
+    help = 'show this help message and exit'
 )
 parser.add_argument(
     'input', metavar = 'input', nargs = '*', default = ['.'],
@@ -33,8 +42,8 @@ group.add_argument(
     help = 'overwrite file with the same name'
 )
 group.add_argument(
-    '-s', dest = 'skip', action = 'store_true',
-    help = 'skip conversion if file exist'
+    '-r', dest = 'rename', action = 'store_true',
+    help = 'auto rename if file name conflicts'
 )
 args = parser.parse_args()
 
@@ -72,39 +81,45 @@ def name_format(path, meta):
     name += '.' + meta['format']
     folder = args.output if args.output else os.path.dirname(path)
     save = os.path.join(folder, name)
-    if not (args.cover or args.skip): save = validate_collision(save)
+    if args.rename: save = validate_collision(save)
     return save
 
-if args.output:
-    args.output = os.path.abspath(args.output)
-    if not os.path.exists(args.output):
-        print('output does not exist')
+def main():
+    if args.output:
+        args.output = os.path.abspath(args.output)
+        if not os.path.exists(args.output):
+            print('output does not exist')
+            exit()
+        if not os.path.isdir(args.output):
+            print('output is not a folder')
+            exit()
+
+    files = []
+    for path in args.input:
+        path = os.path.abspath(path)
+        if not os.path.exists(path):
+            continue
+        if os.path.isdir(path):
+            files += [os.path.join(path, name) for name in os.listdir(path) if os.path.splitext(name)[-1] == '.ncm']
+        else:
+            files += [path]
+
+    if sys.version[0] == '2':
+        files = [path.decode(sys.stdin.encoding) for path in files]
+
+    if not files:
+        print('empty input')
         exit()
-    if not os.path.isdir(args.output):
-        print('output is not a folder')
-        exit()
 
-files = []
-for path in args.input:
-    path = os.path.abspath(path)
-    if not os.path.exists(path):
-        continue
-    if os.path.isdir(path):
-        files += [os.path.join(path, name) for name in os.listdir(path) if os.path.splitext(name)[-1] == '.ncm']
-    else:
-        files += [path]
+    for path in files:
+        try:
+            save = dump(path, name_format, not args.cover)
+            if save: print(os.path.split(save)[-1])
+            if args.delete: os.remove(path)
+        except KeyboardInterrupt:
+            exit()
+        except:
+            print(traceback.format_exc())
 
-if sys.version[0] == '2':
-    files = [path.decode(sys.stdin.encoding) for path in files]
-
-if not files:
-    print('empty input')
-    exit()
-
-for path in files:
-    try:
-        save = ncmdump.dump(path, name_format, args.skip)
-        if save: print(os.path.split(save)[-1])
-        if args.delete: os.remove(path)
-    except KeyboardInterrupt:
-        exit()
+if __name__ == '__main__':
+    main()
