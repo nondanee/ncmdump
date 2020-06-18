@@ -49,6 +49,7 @@ optional arguments:
   -f format  customize naming format
   -o output  customize saving folder
   -d         delete source after conversion
+  -rs        recursive search folder
   -c         overwrite file with the same name
   -r         auto rename if file name conflicts
 ```
