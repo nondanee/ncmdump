@@ -36,6 +36,10 @@ parser.add_argument(
     '-d', dest = 'delete', action = 'store_true',
     help = 'delete source after conversion'
 )
+parser.add_argument(
+    '-rs', dest = 'recursivesearch', action = 'store_true',
+    help = 'recursive search folder'
+)
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
     '-c', dest = 'cover', action = 'store_true',
@@ -84,6 +88,17 @@ def name_format(path, meta):
     if args.rename: save = validate_collision(save)
     return save
 
+def search_ncms(path, list):
+    _fileNames = os.listdir(path)
+    for _file in _fileNames:
+        _tempPath = path + '/' + _file
+
+        if os.path.isfile(_tempPath):
+            if os.path.splitext(_tempPath)[1] == ".ncm":
+                list.append(_tempPath)
+        else:
+            search_ncms(_tempPath, list)
+
 def main():
     if args.output:
         args.output = os.path.abspath(args.output)
@@ -100,7 +115,10 @@ def main():
         if not os.path.exists(path):
             continue
         if os.path.isdir(path):
-            files += [os.path.join(path, name) for name in os.listdir(path) if os.path.splitext(name)[-1] == '.ncm']
+            if args.recursivesearch:
+                search_ncms(path, files)
+            else:
+                files += [os.path.join(path, name) for name in os.listdir(path) if os.path.splitext(name)[-1] == '.ncm']
         else:
             files += [path]
 
